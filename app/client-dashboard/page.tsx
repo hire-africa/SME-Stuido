@@ -3,20 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
-  BarChart3, DollarSign, FileText, LogOut, Menu, X, Settings, 
+  BarChart3, FileText, LogOut, Menu, X, Settings, 
   TrendingUp, Clock, Eye, Download, Trash2,
   Zap, ArrowRight, 
-  BookOpen, Presentation, Building2, Calculator, Palette, Briefcase, Check
+  BookOpen, Presentation, Building2, Calculator, Palette, Briefcase, Check, Lock, RefreshCw
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/authStore'
+import SubscriptionModal from '@/app/components/SubscriptionModal'
 import toast from 'react-hot-toast'
 
 export default function ClientDashboardPage() {
   const router = useRouter()
-  const { isAuthenticated, logout, user } = useAuthStore()
+  const { isAuthenticated, logout, user, refreshUser } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [userProjects, setUserProjects] = useState<any[]>([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -38,38 +42,29 @@ export default function ClientDashboardPage() {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
-    // Load jQuery and PayChangu scripts sequentially
-    if (typeof window !== 'undefined') {
-      const loadScripts = () => {
-        // Load jQuery first
-        if (!(window as any).jQuery) {
-          const jqueryScript = document.createElement('script')
-          jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js'
-          jqueryScript.type = 'text/javascript'
-          jqueryScript.onload = () => {
-            // Wait a bit for jQuery to initialize, then load PayChangu
-            setTimeout(() => {
-              if (!(window as any).PaychanguCheckout) {
-                const paychanguScript = document.createElement('script')
-                paychanguScript.src = 'https://in.paychangu.com/js/popup.js'
-                paychanguScript.type = 'text/javascript'
-                document.body.appendChild(paychanguScript)
-              }
-            }, 500)
-          }
-          document.body.appendChild(jqueryScript)
-        } else if (!(window as any).PaychanguCheckout) {
-          // jQuery already loaded, just load PayChangu
-          const paychanguScript = document.createElement('script')
-          paychanguScript.src = 'https://in.paychangu.com/js/popup.js'
-          paychanguScript.type = 'text/javascript'
-          document.body.appendChild(paychanguScript)
+    // Fetch user projects
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth-storage') ? JSON.parse(localStorage.getItem('auth-storage') || '{}').state?.token : ''}`,
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setUserProjects(data.data || [])
         }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
       }
-
-      loadScripts()
     }
-  }, [isAuthenticated, router])
+
+    if (user?.id) {
+      fetchProjects()
+    }
+
+    // Scripts are loaded by PayChanguProvider in layout
+  }, [isAuthenticated, router, user?.id])
 
   if (!mounted || !isAuthenticated()) {
     return null
@@ -79,6 +74,18 @@ export default function ClientDashboardPage() {
     logout()
     toast.success('Logged out successfully')
     router.push('/')
+  }
+
+  const handleRefreshUser = async () => {
+    setIsRefreshing(true)
+    const success = await refreshUser()
+    setIsRefreshing(false)
+    
+    if (success) {
+      toast.success('Profile updated!')
+    } else {
+      toast.error('Failed to refresh profile')
+    }
   }
 
   const documentGenerators = [
@@ -224,12 +231,24 @@ export default function ClientDashboardPage() {
               {activeTab === 'sectors' && 'Sector Templates'}
               {activeTab === 'settings' && 'Settings'}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Welcome back! Create professional documents with AI</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Welcome back, {user?.fullName}! Create professional documents with AI</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-              JD
-            </div>
+            <button
+              onClick={handleRefreshUser}
+              disabled={isRefreshing}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
+              title="Refresh profile data"
+            >
+              <RefreshCw size={20} className={`text-gray-600 dark:text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.fullName} className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {user?.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+              </div>
+            )}
           </div>
         </div>
 
@@ -246,35 +265,41 @@ export default function ClientDashboardPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">Documents Created</p>
                     <FileText size={18} className="text-emerald" />
                   </div>
-                  <p className="text-3xl font-bold text-navy dark:text-white">12</p>
-                  <p className="text-xs text-green-600 mt-2">↑ 3 this month</p>
+                  <p className="text-3xl font-bold text-navy dark:text-white">{userProjects.length}</p>
+                  <p className="text-xs text-green-600 mt-2">Total documents</p>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Downloads</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
                     <Download size={18} className="text-emerald" />
                   </div>
-                  <p className="text-3xl font-bold text-navy dark:text-white">6</p>
-                  <p className="text-xs text-green-600 mt-2">↑ 2 this month</p>
+                  <p className="text-3xl font-bold text-navy dark:text-white">{userProjects.filter(p => p.status === 'COMPLETED').length}</p>
+                  <p className="text-xs text-green-600 mt-2">Ready to download</p>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Spent</p>
-                    <DollarSign size={18} className="text-gold" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Business Name</p>
+                    <Briefcase size={18} className="text-gold" />
                   </div>
-                  <p className="text-3xl font-bold text-navy dark:text-white">MK 150K</p>
-                  <p className="text-xs text-gray-500 mt-2">Subscription active</p>
+                  <p className="text-lg font-bold text-navy dark:text-white truncate">{user?.businessName}</p>
+                  <p className="text-xs text-gray-500 mt-2">Your company</p>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">Subscription</p>
-                    <Clock size={18} className="text-gold" />
+                    <Clock size={18} className={user?.subscriptionActive ? 'text-emerald' : 'text-red-500'} />
                   </div>
-                  <p className="text-3xl font-bold text-emerald dark:text-emerald-400">Unlimited</p>
-                  <p className="text-xs text-gray-500 mt-2">Renews in 15 days</p>
+                  <p className={`text-3xl font-bold ${user?.subscriptionActive ? 'text-emerald dark:text-emerald-400' : 'text-red-500'}`}>
+                    {user?.subscriptionActive ? 'Active' : 'Inactive'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {user?.subscriptionActive && user?.subscriptionEndDate 
+                      ? `Renews ${new Date(user.subscriptionEndDate).toLocaleDateString()}`
+                      : 'No active subscription'}
+                  </p>
                 </div>
               </div>
 
@@ -328,93 +353,112 @@ export default function ClientDashboardPage() {
           {/* GENERATE TAB */}
           {activeTab === 'generate' && (
             <>
-              {/* Subscription Status Banner */}
-              <div className="mb-8 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 border-2 border-emerald rounded-lg p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-navy dark:text-white mb-1">Unlimited Access</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Your subscription includes unlimited access to all document generators</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Plan</p>
-                    <p className="text-2xl font-bold text-emerald">MK 25,000</p>
-                    <p className="text-xs text-gray-500 mt-1">Renews in 15 days</p>
-                  </div>
+              {!user?.subscriptionActive ? (
+                <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-2 border-red-300 rounded-lg p-8 text-center">
+                  <Lock size={48} className="text-red-500 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-navy dark:text-white mb-2">Subscription Required</h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6">You need an active subscription to access document generators</p>
+                  <button
+                    onClick={() => setShowSubscriptionModal(true)}
+                    className="bg-emerald text-white px-8 py-3 rounded-lg hover:bg-emerald/90 transition font-semibold inline-flex items-center gap-2"
+                  >
+                    <Zap size={20} />
+                    Upgrade Now
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Subscription Status Banner */}
+                  <div className="mb-8 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 border-2 border-emerald rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-navy dark:text-white mb-1">Unlimited Access</h3>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">Your subscription includes unlimited access to all document generators</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{user?.subscriptionPlan === 'monthly' ? 'Monthly' : 'Weekly'} Plan</p>
+                        <p className="text-2xl font-bold text-emerald">MK {user?.subscriptionPlan === 'monthly' ? '25,000' : '10,000'}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {user?.subscriptionEndDate ? `Renews ${new Date(user.subscriptionEndDate).toLocaleDateString()}` : 'Active'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="mb-8">
-                <p className="text-gray-600 dark:text-gray-400 mb-6">Select a document type to generate with AI. Answer simple questions and get professional documents in minutes.</p>
-              </div>
+                  <div className="mb-8">
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">Select a document type to generate with AI. Answer simple questions and get professional documents in minutes.</p>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {documentGenerators.map((generator) => {
-                  const IconComponent = generator.icon
-                  const getGeneratorPath = (id: string) => {
-                    switch (id) {
-                      case 'proposal':
-                        return '/generate/proposal'
-                      case 'pitch':
-                        return '/generate/pitch-deck'
-                      case 'profile':
-                        return '/generate/company-profile'
-                      case 'loan':
-                        return '/generate/loan-application'
-                      default:
-                        return '#'
-                    }
-                  }
-                  
-                  const path = getGeneratorPath(generator.id)
-                  const isAvailable = path !== '#'
-                  
-                  return (
-                    <button
-                      key={generator.id}
-                      onClick={() => {
-                        if (isAvailable) {
-                          router.push(path)
-                        } else {
-                          toast.success(`${generator.name} coming soon...`)
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {documentGenerators.map((generator) => {
+                      const IconComponent = generator.icon
+                      const getGeneratorPath = (id: string) => {
+                        switch (id) {
+                          case 'proposal':
+                            return '/generate/proposal'
+                          case 'pitch':
+                            return '/generate/pitch-deck'
+                          case 'profile':
+                            return '/generate/company-profile'
+                          case 'loan':
+                            return '/generate/loan-application'
+                          default:
+                            return '#'
                         }
-                      }}
-                      className={`bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-emerald hover:shadow-xl transition text-left group ${
-                        !isAvailable ? 'opacity-60 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <div className="mb-4 inline-block p-3 bg-emerald/10 rounded-lg group-hover:bg-emerald/20 transition">
-                        <IconComponent size={32} className="text-emerald" />
-                      </div>
-                      <h3 className="font-bold text-navy dark:text-white mb-1 text-lg">{generator.name}</h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{generator.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                          {isAvailable ? 'Included in subscription' : 'Coming soon'}
-                        </span>
-                        <ArrowRight size={16} className="text-gray-400 group-hover:text-emerald transition" />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+                      }
+                      
+                      const path = getGeneratorPath(generator.id)
+                      const isAvailable = path !== '#'
+                      
+                      return (
+                        <button
+                          key={generator.id}
+                          onClick={() => {
+                            if (isAvailable) {
+                              router.push(path)
+                            } else {
+                              toast.success(`${generator.name} coming soon...`)
+                            }
+                          }}
+                          className={`bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-emerald hover:shadow-xl transition text-left group ${
+                            !isAvailable ? 'opacity-60 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <div className="mb-4 inline-block p-3 bg-emerald/10 rounded-lg group-hover:bg-emerald/20 transition">
+                            <IconComponent size={32} className="text-emerald" />
+                          </div>
+                          <h3 className="font-bold text-navy dark:text-white mb-1 text-lg">{generator.name}</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{generator.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">
+                              {isAvailable ? 'Included in subscription' : 'Coming soon'}
+                            </span>
+                            <ArrowRight size={16} className="text-gray-400 group-hover:text-emerald transition" />
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
 
-              {/* Sector Templates Section */}
-              <div className="mt-12">
-                <h3 className="text-2xl font-bold text-navy dark:text-white mb-4">Choose Your Sector</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">Get industry-specific insights, pricing norms, and growth opportunities</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {sectors.map((sector) => (
-                    <button
-                      key={sector}
-                      onClick={() => toast.success(`Loading ${sector} template...`)}
-                      className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-emerald hover:shadow-lg transition text-center group"
-                    >
-                      <p className="font-semibold text-navy dark:text-white text-sm group-hover:text-emerald transition">{sector}</p>
-                      <p className="text-xs text-gray-500 mt-1">Industry insights</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  {/* Sector Templates Section */}
+                  <div className="mt-12">
+                    <h3 className="text-2xl font-bold text-navy dark:text-white mb-4">Choose Your Sector</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">Get industry-specific insights, pricing norms, and growth opportunities</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {sectors.map((sector) => (
+                        <button
+                          key={sector}
+                          onClick={() => toast.success(`Loading ${sector} template...`)}
+                          className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-emerald hover:shadow-lg transition text-center group"
+                        >
+                          <p className="font-semibold text-navy dark:text-white text-sm group-hover:text-emerald transition">{sector}</p>
+                          <p className="text-xs text-gray-500 mt-1">Industry insights</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -540,44 +584,7 @@ export default function ClientDashboardPage() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => {
-                        const tx_ref = '' + Math.floor((Math.random() * 1000000000) + 1)
-                        const amount = 25000
-                        const publicKey = process.env.NEXT_PUBLIC_PAYCHANGU_PUBLIC_KEY
-                        const [firstName, lastName] = user?.fullName?.split(' ') || ['User', 'Account']
-                        
-                        // Call PayChangu checkout
-                        if (typeof window !== 'undefined' && (window as any).PaychanguCheckout) {
-                          try {
-                            (window as any).PaychanguCheckout({
-                              public_key: publicKey,
-                              tx_ref: tx_ref,
-                              amount: amount,
-                              currency: 'MWK',
-                              callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
-                              return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
-                              customer: {
-                                email: user?.email || 'user@example.com',
-                                first_name: firstName || 'User',
-                                last_name: lastName || 'Account',
-                              },
-                              customization: {
-                                title: 'SME Studio AI',
-                                description: 'Monthly Subscription - MK 25,000',
-                              },
-                              meta: {
-                                plan: 'monthly',
-                                amount: amount,
-                              },
-                            })
-                          } catch (error) {
-                            console.error('PayChangu error:', error)
-                            toast.error('Payment system error. Please try again.')
-                          }
-                        } else {
-                          toast.error('Payment system not ready. Please try again.')
-                        }
-                      }}
+                      onClick={() => setShowSubscriptionModal(true)}
                       className="w-full bg-emerald text-white py-3 rounded-lg hover:bg-emerald/90 transition font-semibold"
                     >
                       Subscribe Now
@@ -617,44 +624,7 @@ export default function ClientDashboardPage() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => {
-                        const tx_ref = '' + Math.floor((Math.random() * 1000000000) + 1)
-                        const amount = 10000
-                        const publicKey = process.env.NEXT_PUBLIC_PAYCHANGU_PUBLIC_KEY
-                        const [firstName, lastName] = user?.fullName?.split(' ') || ['User', 'Account']
-                        
-                        // Call PayChangu checkout
-                        if (typeof window !== 'undefined' && (window as any).PaychanguCheckout) {
-                          try {
-                            (window as any).PaychanguCheckout({
-                              public_key: publicKey,
-                              tx_ref: tx_ref,
-                              amount: amount,
-                              currency: 'MWK',
-                              callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
-                              return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
-                              customer: {
-                                email: user?.email || 'user@example.com',
-                                first_name: firstName || 'User',
-                                last_name: lastName || 'Account',
-                              },
-                              customization: {
-                                title: 'SME Studio AI',
-                                description: 'Weekly Subscription - MK 10,000',
-                              },
-                              meta: {
-                                plan: 'weekly',
-                                amount: amount,
-                              },
-                            })
-                          } catch (error) {
-                            console.error('PayChangu error:', error)
-                            toast.error('Payment system error. Please try again.')
-                          }
-                        } else {
-                          toast.error('Payment system not ready. Please try again.')
-                        }
-                      }}
+                      onClick={() => setShowSubscriptionModal(true)}
                       className="w-full bg-gold text-white py-3 rounded-lg hover:bg-gold/90 transition font-semibold"
                     >
                       Subscribe Now
@@ -669,19 +639,19 @@ export default function ClientDashboardPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Full Name</label>
-                    <input type="text" defaultValue="John Doe" className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
+                    <input type="text" defaultValue={user?.fullName} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Business Name</label>
-                    <input type="text" defaultValue="My Business" className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
+                    <input type="text" defaultValue={user?.businessName} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Email</label>
-                    <input type="email" defaultValue="john@example.com" className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
+                    <input type="email" defaultValue={user?.email} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Phone</label>
-                    <input type="tel" defaultValue="+265 9XX XXX XXX" className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
+                    <input type="tel" defaultValue={user?.phone || ''} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white focus:outline-none focus:border-emerald" />
                   </div>
                   <button className="px-6 py-2 bg-emerald text-white rounded-lg hover:bg-emerald/90 transition font-medium">Save Changes</button>
                 </div>
@@ -691,6 +661,9 @@ export default function ClientDashboardPage() {
 
         </div>
       </div>
+
+      {/* Subscription Modal */}
+      <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
     </div>
   )
 }

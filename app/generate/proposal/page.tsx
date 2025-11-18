@@ -1,16 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, Download, Loader2, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GeneratingLoader from '@/app/components/GeneratingLoader'
+import { ProposalTemplate } from '@/app/components/ProposalTemplate'
 
 export default function ProposalGeneratorPage() {
   const router = useRouter()
+  const templateRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [content, setContent] = useState('')
+  const [downloadLoading, setDownloadLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     businessName: '',
@@ -72,35 +75,63 @@ export default function ProposalGeneratorPage() {
     }
   }
 
-  const handleDownload = async (format: 'docx' | 'txt') => {
+  const handleDownload = async (format: 'pdf' | 'docx') => {
+    setDownloadLoading(true)
     try {
-      const response = await fetch('/api/export/proposal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content,
-          businessName: formData.businessName,
-          format,
-        }),
-      })
+      if (format === 'pdf') {
+        // Dynamic import for html2pdf
+        const html2pdf = (await import('html2pdf.js')).default
+        
+        if (templateRef.current) {
+          const element = templateRef.current
+          const opt = {
+            margin: 0,
+            filename: `${formData.businessName.replace(/\s+/g, '_')}_proposal.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+          }
+          html2pdf().set(opt).from(element).save()
+          toast.success('PDF downloaded successfully!')
+        }
+      } else {
+        // Download as DOCX
+        const response = await fetch('/api/export/proposal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            sector: formData.sector,
+            description: formData.description,
+            targetMarket: formData.targetMarket,
+            monthlyRevenue: formData.monthlyRevenue ? parseInt(formData.monthlyRevenue) : undefined,
+            fundingNeeded: formData.fundingNeeded ? parseInt(formData.fundingNeeded) : undefined,
+            fundingPurpose: formData.fundingPurpose,
+            format: 'docx',
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error('Failed to download document')
+        if (!response.ok) {
+          throw new Error('Failed to download document')
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${formData.businessName.replace(/\s+/g, '_')}_proposal.docx`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast.success('Document downloaded successfully!')
       }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${formData.businessName.replace(/\s+/g, '_')}_proposal.${format === 'docx' ? 'docx' : 'txt'}`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      toast.success('Document downloaded successfully!')
     } catch (error) {
       console.error('Download error:', error)
       toast.error('Failed to download document')
+    } finally {
+      setDownloadLoading(false)
     }
   }
 
@@ -277,12 +308,32 @@ export default function ProposalGeneratorPage() {
         ) : (
           // Generated Content
           <div className="space-y-6">
-            {/* Preview */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8">
-              <h2 className="text-2xl font-bold text-navy dark:text-white mb-6">Generated Proposal</h2>
-              <div className="prose dark:prose-invert max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                  {content}
+            {/* Preview - Full Document Template */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-navy dark:text-white flex items-center gap-2">
+                  <FileText size={24} />
+                  Document Preview
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">This is exactly how your document will look when downloaded</p>
+              </div>
+              
+              {/* Template Preview */}
+              <div className="overflow-auto max-h-[600px] bg-gray-100 dark:bg-gray-900 p-4">
+                <div className="bg-white shadow-lg">
+                  <ProposalTemplate
+                    ref={templateRef}
+                    data={{
+                      businessName: formData.businessName,
+                      businessType: formData.businessType,
+                      sector: formData.sector,
+                      description: formData.description,
+                      targetMarket: formData.targetMarket,
+                      monthlyRevenue: formData.monthlyRevenue ? parseInt(formData.monthlyRevenue) : undefined,
+                      fundingNeeded: formData.fundingNeeded ? parseInt(formData.fundingNeeded) : undefined,
+                      fundingPurpose: formData.fundingPurpose,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -292,18 +343,38 @@ export default function ProposalGeneratorPage() {
               <h3 className="text-lg font-semibold text-navy dark:text-white mb-4">Download Your Document</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => handleDownload('docx')}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  onClick={() => handleDownload('pdf')}
+                  disabled={downloadLoading}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download size={20} />
-                  Download as Word (.docx)
+                  {downloadLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={20} />
+                      Download as PDF
+                    </>
+                  )}
                 </button>
                 <button
-                  onClick={() => handleDownload('txt')}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
+                  onClick={() => handleDownload('docx')}
+                  disabled={downloadLoading}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download size={20} />
-                  Download as Text (.txt)
+                  {downloadLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={20} />
+                      Download as Word (.docx)
+                    </>
+                  )}
                 </button>
               </div>
             </div>

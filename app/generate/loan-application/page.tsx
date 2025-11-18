@@ -1,16 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Loader2, X } from 'lucide-react'
+import { ArrowLeft, Download, Loader2, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GeneratingLoader from '@/app/components/GeneratingLoader'
+import { LoanApplicationTemplate } from '@/app/components/LoanApplicationTemplate'
 
 export default function LoanApplicationGeneratorPage() {
   const router = useRouter()
+  const templateRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [content, setContent] = useState('')
+  const [downloadLoading, setDownloadLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     businessName: '',
@@ -61,34 +64,63 @@ export default function LoanApplicationGeneratorPage() {
     }
   }
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'docx') => {
+    setDownloadLoading(true)
     try {
-      const response = await fetch('/api/export/loan-application', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content,
-          businessName: formData.businessName,
-        }),
-      })
+      if (format === 'pdf') {
+        const html2pdf = (await import('html2pdf.js')).default
+        
+        if (templateRef.current) {
+          const element = templateRef.current
+          const opt = {
+            margin: 0,
+            filename: `${formData.businessName.replace(/\s+/g, '_')}_loan_application.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+          }
+          html2pdf().set(opt).from(element).save()
+          toast.success('PDF downloaded successfully!')
+        }
+      } else {
+        const response = await fetch('/api/export/loan-application', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            businessDescription: formData.businessDescription,
+            loanAmount: formData.loanAmount ? parseInt(formData.loanAmount) : 0,
+            loanPurpose: formData.loanPurpose,
+            repaymentPeriod: formData.repaymentPeriod,
+            ownerName: formData.ownerName,
+            yearsInBusiness: formData.yearsInBusiness ? parseInt(formData.yearsInBusiness) : 0,
+            currentRevenue: formData.currentRevenue ? parseInt(formData.currentRevenue) : 0,
+            employeeCount: formData.employeeCount ? parseInt(formData.employeeCount) : 0,
+            format: 'docx',
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error('Failed to download document')
+        if (!response.ok) {
+          throw new Error('Failed to download document')
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${formData.businessName.replace(/\s+/g, '_')}_loan_application.docx`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast.success('Document downloaded successfully!')
       }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${formData.businessName.replace(/\s+/g, '_')}_loan_application.docx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      toast.success('Document downloaded successfully!')
     } catch (error) {
       console.error('Download error:', error)
       toast.error('Failed to download document')
+    } finally {
+      setDownloadLoading(false)
     }
   }
 
@@ -326,38 +358,35 @@ export default function LoanApplicationGeneratorPage() {
             </div>
           </>
         ) : (
-          <>
-            {/* Generated Content Preview */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-navy dark:text-white">Generated Loan Application</h2>
-                <button
-                  onClick={() => {
-                    setGenerated(false)
-                    setContent('')
-                    setFormData({
-                      businessName: '',
-                      businessType: '',
-                      businessDescription: '',
-                      loanAmount: '',
-                      loanPurpose: '',
-                      repaymentPeriod: '',
-                      bankName: '',
-                      ownerName: '',
-                      yearsInBusiness: '',
-                      currentRevenue: '',
-                      employeeCount: '',
-                    })
-                  }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                >
-                  <X size={20} className="text-gray-600 dark:text-gray-400" />
-                </button>
+          <div className="space-y-6">
+            {/* Preview - Full Document Template */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-navy dark:text-white flex items-center gap-2">
+                  <FileText size={24} />
+                  Document Preview
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">This is exactly how your document will look when downloaded</p>
               </div>
-
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 max-h-96 overflow-y-auto mb-6">
-                <div className="prose dark:prose-invert max-w-none text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {content}
+              
+              {/* Template Preview */}
+              <div className="overflow-auto max-h-[600px] bg-gray-100 dark:bg-gray-900 p-4">
+                <div className="bg-white shadow-lg">
+                  <LoanApplicationTemplate
+                    ref={templateRef}
+                    data={{
+                      businessName: formData.businessName,
+                      businessType: formData.businessType,
+                      businessDescription: formData.businessDescription,
+                      loanAmount: formData.loanAmount ? parseInt(formData.loanAmount) : 0,
+                      loanPurpose: formData.loanPurpose,
+                      repaymentPeriod: formData.repaymentPeriod,
+                      ownerName: formData.ownerName,
+                      yearsInBusiness: formData.yearsInBusiness ? parseInt(formData.yearsInBusiness) : 0,
+                      currentRevenue: formData.currentRevenue ? parseInt(formData.currentRevenue) : 0,
+                      employeeCount: formData.employeeCount ? parseInt(formData.employeeCount) : 0,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -365,36 +394,63 @@ export default function LoanApplicationGeneratorPage() {
             {/* Download Options */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-navy dark:text-white mb-4">Download Your Loan Application</h3>
-              <div className="flex justify-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => handleDownload()}
-                  className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  onClick={() => handleDownload('pdf')}
+                  disabled={downloadLoading}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download size={20} />
-                  Download as Word Document (.docx)
+                  {downloadLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={20} />
+                      Download as PDF
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleDownload('docx')}
+                  disabled={downloadLoading}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {downloadLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={20} />
+                      Download as Word (.docx)
+                    </>
+                  )}
                 </button>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-4">
               <button
                 onClick={() => {
                   setGenerated(false)
                   setContent('')
                 }}
-                className="flex-1 px-8 py-3 bg-gray-200 dark:bg-gray-700 text-navy dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium"
+                className="flex-1 px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition font-medium"
               >
                 Generate Another
               </button>
               <button
                 onClick={() => router.back()}
-                className="flex-1 px-8 py-3 bg-gray-100 dark:bg-gray-900 text-navy dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition font-medium"
+                className="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
               >
                 Back to Dashboard
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

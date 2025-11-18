@@ -77,7 +77,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -87,46 +87,46 @@ export default function LoginPage() {
             </div>
             <span className="text-2xl font-bold text-navy">SME Studio AI</span>
           </Link>
-          <h1 className="text-3xl font-bold text-navy mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Login to your account to continue</p>
+          <h1 className="text-3xl font-bold text-navy dark:text-white mb-2">Welcome Back</h1>
+          <p className="text-gray-600 dark:text-gray-400">Login to your account to continue</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-navy mb-2">Email Address</label>
+            <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Mail className="absolute left-3 top-3 text-gray-400 dark:text-gray-500" size={20} />
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20"
               />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-semibold text-navy mb-2">Password</label>
+            <label className="block text-sm font-semibold text-navy dark:text-white mb-2">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Lock className="absolute left-3 top-3 text-gray-400 dark:text-gray-500" size={20} />
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-navy dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function LoginPage() {
           </button>
 
           {/* Signup Link */}
-          <p className="text-center text-gray-600 text-sm mt-4">
+          <p className="text-center text-gray-600 dark:text-gray-400 text-sm mt-4">
             Don't have an account?{' '}
             <Link href="/signup" className="text-emerald font-semibold hover:underline">
               Sign up here
@@ -167,10 +167,10 @@ export default function LoginPage() {
         </form>
 
         {/* Demo Credentials */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-semibold mb-2">Demo Credentials:</p>
-          <p className="text-xs text-blue-800">Email: demo@smeai.com</p>
-          <p className="text-xs text-blue-800">Password: demo123456</p>
+        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p className="text-sm text-blue-900 dark:text-blue-400 font-semibold mb-2">Demo Credentials:</p>
+          <p className="text-xs text-blue-800 dark:text-blue-300">Email: demo@smeai.com</p>
+          <p className="text-xs text-blue-800 dark:text-blue-300">Password: demo123456</p>
         </div>
       </div>
     </div>

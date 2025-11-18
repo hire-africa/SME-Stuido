@@ -6,9 +6,13 @@ export interface AuthUser {
   email: string
   fullName: string
   businessName: string
+  phone?: string
+  avatar?: string
   role: 'CLIENT' | 'ADMIN'
   subscriptionActive: boolean
   subscriptionPlan?: string
+  subscriptionEndDate?: string
+  documentsRemaining?: number
 }
 
 interface AuthState {
@@ -28,6 +32,7 @@ interface AuthState {
   logout: () => void
   isAuthenticated: () => boolean
   isAdmin: () => boolean
+  refreshUser: () => Promise<boolean>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -129,6 +134,26 @@ export const useAuthStore = create<AuthState>()(
 
       isAdmin: () => {
         return get().user?.role === 'ADMIN'
+      },
+
+      refreshUser: async () => {
+        const token = get().token
+        if (!token) return false
+
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          })
+
+          if (!response.ok) return false
+
+          const data = await response.json()
+          set({ user: data.data })
+          return true
+        } catch (error) {
+          console.error('Failed to refresh user:', error)
+          return false
+        }
       },
     }),
     {

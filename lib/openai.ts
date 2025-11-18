@@ -17,8 +17,18 @@ export async function generateProposal(input: {
   fundingNeeded?: number
   fundingPurpose?: string
 }): Promise<string> {
-  const prompt = `Generate a professional business proposal for the following SME:
+  const prompt = `You are an expert business consultant. Generate a PROFESSIONAL and ENHANCED business proposal for the following SME. 
 
+IMPORTANT: 
+- Rephrase and improve ALL user input to be more professional and compelling
+- Add industry-specific insights and best practices
+- Enhance descriptions with concrete examples and metrics
+- Do NOT simply repeat what the user wrote - make it better
+- Add strategic recommendations based on the sector
+- Include realistic financial projections if not provided
+- Make it suitable for bank loan applications and investor pitches
+
+Business Information:
 Business Name: ${input.businessName}
 Business Type: ${input.businessType}
 Sector: ${input.sector}
@@ -28,19 +38,19 @@ Monthly Revenue: ${input.monthlyRevenue ? `MK ${input.monthlyRevenue.toLocaleStr
 Funding Needed: ${input.fundingNeeded ? `MK ${input.fundingNeeded.toLocaleString()}` : 'Not specified'}
 Funding Purpose: ${input.fundingPurpose || 'Not specified'}
 
-Please create a comprehensive business proposal with the following sections:
-1. Executive Summary
-2. Company Overview
-3. Market Analysis
-4. Products/Services
-5. Marketing Strategy
-6. Operational Plan
-7. Management Team
-8. Financial Projections
-9. Risk Analysis
-10. Implementation Timeline
+Create a comprehensive business proposal with these sections:
+1. Executive Summary - Compelling 2-3 sentence overview with key metrics
+2. Company Overview - Enhanced description of the business and its unique value proposition
+3. Market Analysis - Industry trends, market size, and growth opportunities in the ${input.sector} sector
+4. Products/Services - Detailed description with competitive advantages
+5. Marketing Strategy - Specific, actionable marketing tactics for the ${input.targetMarket}
+6. Operational Plan - Realistic operational structure and processes
+7. Management Team - Team capabilities and experience (create realistic profiles if not provided)
+8. Financial Projections - 3-year projections with realistic growth rates for the ${input.sector}
+9. Risk Analysis - Potential risks and mitigation strategies
+10. Implementation Timeline - Specific milestones and timelines
 
-Make it professional, detailed, and suitable for bank loan applications or investor pitches.`
+Make it professional, data-driven, and compelling. Use industry standards for the ${input.sector} sector in Malawi/Africa.`
 
   const message = await openai.chat.completions.create({
     model: 'gpt-4',
@@ -75,8 +85,18 @@ export async function generatePitchDeck(input: {
   fundingAmount: number
   useOfFunds: string
 }): Promise<string> {
-  const prompt = `Create a professional investor pitch deck outline with 12 slides for:
+  const prompt = `You are an expert pitch deck consultant who has helped startups raise millions. Create a COMPELLING and ENHANCED investor pitch deck for:
 
+IMPORTANT:
+- Rephrase and enhance ALL user input to be more compelling and investor-ready
+- Add specific market data and statistics
+- Strengthen the problem statement with real market pain points
+- Enhance the solution with unique value propositions
+- Add realistic financial projections and growth metrics
+- Do NOT simply repeat what the user wrote - make it significantly better
+- Use persuasive language that resonates with investors
+
+Business Information:
 Business: ${input.businessName}
 Tagline: ${input.tagline}
 Problem: ${input.problemStatement}
@@ -87,21 +107,21 @@ Business Model: ${input.businessModel}
 Funding Needed: MK ${input.fundingAmount.toLocaleString()}
 Use of Funds: ${input.useOfFunds}
 
-Generate slide-by-slide content for:
-1. Title Slide
-2. Problem
-3. Solution
-4. Market Opportunity
-5. Business Model
-6. Traction/Proof
-7. Team
-8. Financial Projections
-9. Use of Funds
-10. Competitive Advantage
-11. Call to Action
-12. Contact
+Generate compelling slide-by-slide content for:
+1. Title Slide - Attention-grabbing hook
+2. Problem - Quantified market pain point with statistics
+3. Solution - Clear, compelling solution with unique advantages
+4. Market Opportunity - Market size, growth rate, and TAM/SAM/SOM
+5. Business Model - Revenue streams and unit economics
+6. Traction/Proof - Early wins, partnerships, or proof of concept
+7. Team - Impressive team background and relevant experience
+8. Financial Projections - 3-year revenue, profitability, and key metrics
+9. Use of Funds - Clear allocation (e.g., 40% product, 35% marketing, 25% operations)
+10. Competitive Advantage - Defensible moats and competitive positioning
+11. Call to Action - Clear next steps and investment ask
+12. Contact - Contact information and social proof
 
-Make it compelling, data-driven, and investor-ready.`
+Make it compelling, data-driven, and investor-ready. Use realistic metrics for the African market.`
 
   const message = await openai.chat.completions.create({
     model: 'gpt-4',
@@ -134,8 +154,19 @@ export async function generateCompanyProfile(input: {
   achievements: string[]
   sector: string
 }): Promise<string> {
-  const prompt = `Create a professional company profile for:
+  const prompt = `You are an expert brand consultant. Create a PROFESSIONAL and COMPELLING company profile for:
 
+IMPORTANT:
+- Rephrase and enhance ALL user input to be more professional and compelling
+- Add industry-specific language and best practices
+- Enhance service descriptions with concrete benefits and outcomes
+- Transform achievements into impressive metrics and results
+- Create a compelling mission and vision if not provided
+- Add strategic positioning and market differentiation
+- Do NOT simply repeat what the user wrote - make it significantly better
+- Make it suitable for tenders, client pitches, and business development
+
+Company Information:
 Company: ${input.businessName}
 Type: ${input.businessType}
 Years in Operation: ${input.yearsInOperation}
@@ -145,16 +176,16 @@ Key Achievements: ${input.achievements.join(', ')}
 Sector: ${input.sector}
 
 Generate a comprehensive company profile with:
-1. Company Overview
-2. Mission & Vision
-3. Our Services
-4. Why Choose Us
-5. Team Highlights
-6. Key Achievements
-7. Client Testimonials (suggested)
-8. Contact Information
+1. Company Overview - Enhanced description highlighting market position and expertise
+2. Mission & Vision - Compelling mission and vision statements
+3. Our Services - Detailed service descriptions with benefits and outcomes
+4. Why Choose Us - 5-6 compelling reasons with specific differentiators
+5. Team Highlights - Impressive team background and relevant expertise
+6. Key Achievements - Quantified achievements and success metrics
+7. Client Testimonials - Suggested testimonial format and examples
+8. Contact Information - Professional contact details and call to action
 
-Make it professional, engaging, and suitable for tenders and client pitches.`
+Make it professional, engaging, and compelling. Use industry standards for the ${input.sector} sector in Malawi/Africa. Ensure it stands out and differentiates the company from competitors.`
 
   const message = await openai.chat.completions.create({
     model: 'gpt-4',
@@ -513,8 +544,19 @@ export async function generateLoanApplication(input: {
   currentRevenue: string
   employeeCount: string
 }): Promise<string> {
-  const prompt = `Generate a professional bank loan application document for the following business:
+  const prompt = `You are an expert loan application consultant who has helped hundreds of businesses secure bank financing. Create a PROFESSIONAL and COMPELLING bank loan application document.
 
+IMPORTANT:
+- Rephrase and enhance ALL user input to be more professional and bank-ready
+- Strengthen the business description with market positioning and competitive advantages
+- Enhance the loan purpose with specific, measurable outcomes
+- Create realistic financial projections and repayment calculations
+- Add compelling narratives that demonstrate business viability
+- Do NOT simply repeat what the user wrote - make it significantly better
+- Use language that banks want to see - emphasize stability, growth, and repayment capacity
+- Include realistic assumptions based on the ${input.businessType} sector
+
+Business Information:
 Business Name: ${input.businessName}
 Business Type: ${input.businessType}
 Owner/Manager: ${input.ownerName || 'Not specified'}
@@ -531,68 +573,69 @@ Loan Details:
 Business Description:
 ${input.businessDescription}
 
-Please create a comprehensive loan application document with the following sections:
+Create a comprehensive loan application document with these sections:
 
 ## LOAN APPLICATION FORM
 
 ### APPLICANT INFORMATION
-- Full Name
-- Business Name
-- Business Registration Number
+- Full Name and Background
+- Business Name and Registration
 - Contact Information
-- Years in Operation
+- Years in Operation and Experience
 
 ### BUSINESS OVERVIEW
-- Business Description
-- Products/Services Offered
-- Market Position
-- Competitive Advantages
+- Enhanced business description highlighting market position
+- Products/Services with competitive advantages
+- Market positioning and growth trajectory
+- Unique value propositions
 
 ### LOAN REQUEST
-- Amount Requested
-- Purpose of Loan
-- How Funds Will Be Used
-- Expected Timeline for Fund Utilization
+- Amount Requested with justification
+- Specific purpose and expected outcomes
+- Detailed fund utilization breakdown
+- Timeline for fund deployment and ROI
 
 ### FINANCIAL INFORMATION
-- Current Annual Revenue
-- Current Liabilities
-- Assets
-- Profitability Status
-- Cash Flow Analysis
+- Current Annual Revenue and growth trend
+- Profitability metrics and margins
+- Assets and liabilities
+- Cash flow analysis and projections
+- Debt service capacity analysis
 
 ### REPAYMENT PLAN
-- Proposed Repayment Period
-- Monthly/Quarterly Repayment Amount
-- Source of Repayment
-- Contingency Plan
+- Proposed repayment schedule with calculations
+- Monthly/Quarterly repayment amounts
+- Primary and secondary sources of repayment
+- Contingency plans and risk mitigation
 
 ### COLLATERAL/SECURITY
-- Proposed Collateral
-- Collateral Value
-- Insurance Coverage
+- Proposed collateral with valuation
+- Collateral insurance coverage
+- Additional security measures
 
 ### MANAGEMENT & OPERATIONS
-- Management Team Experience
-- Number of Employees
-- Operational Capacity
-- Growth Plans
+- Management team experience and qualifications
+- Organizational structure
+- Operational capacity and scalability
+- Growth and expansion plans
 
 ### RISK MITIGATION
-- Identified Risks
-- Mitigation Strategies
-- Contingency Plans
+- Identified business and market risks
+- Specific mitigation strategies
+- Contingency plans
+- Industry experience and track record
 
 ### SUPPORTING DOCUMENTS CHECKLIST
 - Business Registration Certificate
 - Tax Clearance Certificate
-- Bank Statements (Last 6 months)
-- Financial Statements
+- Bank Statements (Last 6-12 months)
+- Financial Statements and Audits
 - Proof of Collateral
 - Personal Identification
 - Business Plan
+- Market Analysis
 
-Make the application professional, detailed, and suitable for bank submission. Include specific details from the provided information and make it compelling for loan approval.`
+Make the application professional, compelling, and bank-ready. Emphasize business viability, repayment capacity, and growth potential. Use realistic metrics for the ${input.businessType} sector in Malawi/Africa.`
 
   const message = await openai.chat.completions.create({
     model: 'gpt-4',
