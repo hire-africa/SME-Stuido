@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --emerald: #059669;
+  --navy: #0F172A;
+  --gold: #EAB308;
+  --white: #FFFFFF;
+  --gray: #F3F4F6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #ffffff;
+  color: #0F172A;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+
+.font-space {
+  font-family: 'Space Grotesk', monospace;
+}
+
+.text-emerald {
+  color: #059669;
+}
+
+.bg-emerald {
+  background-color: #059669;
+}
+
+.border-emerald {
+  border-color: #059669;
+}
+
+.hover\:bg-emerald:hover {
+  background-color: #047857;
+}
+
+.text-gold {
+  color: #EAB308;
+}
+
+.bg-gold {
+  background-color: #EAB308;
+}

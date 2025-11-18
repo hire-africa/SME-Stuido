@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String
+  fullName      String
+  businessName  String
+  phone         String?
+  role          UserRole   @default(CLIENT)
+  avatar        String?
+  
+  // Subscription
+  subscriptionActive Boolean   @default(false)
+  subscriptionPlan   String?   // "monthly" or "pay-per-doc"
+  subscriptionEndDate DateTime?
+  documentsRemaining Int       @default(0)
+  
+  // Relations
+  projects      Project[]
+  payments      Payment[]
+  adminLogs     AdminLog[]
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+// Project/Document model
+model Project {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title         String
+  type          DocumentType
+  sector        String
+  status        ProjectStatus @default(DRAFT)
+  
+  // Document data
+  content       Json?
+  metadata      Json?
+  
+  // Files
+  pdfUrl        String?
+  wordUrl       String?
+  pptUrl        String?
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@index([userId])
+}
+
+enum DocumentType {
+  PROPOSAL
+  PITCH_DECK
+  LOAN_APPLICATION
+  COMPANY_PROFILE
+  CASHFLOW
+  EXECUTIVE_SUMMARY
+  BRANDING_KIT
+}
+
+enum ProjectStatus {
+  DRAFT
+  COMPLETED
+  DOWNLOADED
+  ARCHIVED
+}
+
+// Payment model
+model Payment {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  amount        Float
+  currency      String     @default("MWK")
+  paymentMethod String     // "paychangu", "flutterwave"
+  status        PaymentStatus @default(PENDING)
+  
+  transactionId String?    @unique
+  reference     String?
+  
+  description   String?
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@index([userId])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Admin Log model
+model AdminLog {
+  id            String     @id @default(cuid())
+  adminId       String
+  admin         User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  action        String     // "user_created", "user_deleted", "payment_verified", etc.
+  targetType    String?    // "user", "payment", "project"
+  targetId      String?
+  details       Json?
+  
+  createdAt     DateTime   @default(now())
+  
+  @@index([adminId])
+}
+
+// Template model
+model Template {
+  id            String     @id @default(cuid())
+  name          String
+  type          DocumentType
+  sector        String?
+  description   String?
+  content       Json
+  
+  isActive      Boolean    @default(true)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+// Sector Intelligence model
+model SectorIntelligence {
+  id            String     @id @default(cuid())
+  sector        String     @unique
+  
+  description   String?
+  averagePrice  Float?
+  riskFactors   String[]
+  opportunities String[]
+  marketSize    String?
+  growthRate    String?
+  
+  data          Json?
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+// Analytics model
+model Analytics {
+  id            String     @id @default(cuid())
+  
+  totalUsers    Int        @default(0)
+  activeUsers   Int        @default(0)
+  totalDocuments Int       @default(0)
+  totalRevenue  Float      @default(0)
+  
+  date          DateTime   @unique @default(now())
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
