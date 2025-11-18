@@ -16,7 +16,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://in.paychangu.com/js/popup.js"></script>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Ensure PayChangu is available globally
+            window.PaychanguCheckoutReady = false;
+            if (typeof window !== 'undefined') {
+              const checkPayChangu = setInterval(() => {
+                if (typeof window.PaychanguCheckout !== 'undefined') {
+                  window.PaychanguCheckoutReady = true;
+                  clearInterval(checkPayChangu);
+                }
+              }, 100);
+            }
+          `
+        }} />
       </head>
       <body>
         {children}

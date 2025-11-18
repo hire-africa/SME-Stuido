@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 
 export default function ClientDashboardPage() {
   const router = useRouter()
-  const { isAuthenticated, logout } = useAuthStore()
+  const { isAuthenticated, logout, user } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -36,6 +36,38 @@ export default function ClientDashboardPage() {
       toast.error('Payment failed. Please try again.')
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
+    // Load jQuery and PayChangu scripts sequentially
+    if (typeof window !== 'undefined') {
+      const loadScripts = () => {
+        // Load jQuery first
+        if (!(window as any).jQuery) {
+          const jqueryScript = document.createElement('script')
+          jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js'
+          jqueryScript.type = 'text/javascript'
+          jqueryScript.onload = () => {
+            // Wait a bit for jQuery to initialize, then load PayChangu
+            setTimeout(() => {
+              if (!(window as any).PaychanguCheckout) {
+                const paychanguScript = document.createElement('script')
+                paychanguScript.src = 'https://in.paychangu.com/js/popup.js'
+                paychanguScript.type = 'text/javascript'
+                document.body.appendChild(paychanguScript)
+              }
+            }, 500)
+          }
+          document.body.appendChild(jqueryScript)
+        } else if (!(window as any).PaychanguCheckout) {
+          // jQuery already loaded, just load PayChangu
+          const paychanguScript = document.createElement('script')
+          paychanguScript.src = 'https://in.paychangu.com/js/popup.js'
+          paychanguScript.type = 'text/javascript'
+          document.body.appendChild(paychanguScript)
+        }
+      }
+
+      loadScripts()
     }
   }, [isAuthenticated, router])
 
@@ -509,34 +541,41 @@ export default function ClientDashboardPage() {
                     </ul>
                     <button
                       onClick={() => {
-                        const tx_ref = Math.floor(Math.random() * 1000000000) + 1
+                        const tx_ref = '' + Math.floor((Math.random() * 1000000000) + 1)
                         const amount = 25000
                         const publicKey = process.env.NEXT_PUBLIC_PAYCHANGU_PUBLIC_KEY
+                        const [firstName, lastName] = user?.fullName?.split(' ') || ['User', 'Account']
                         
+                        // Call PayChangu checkout
                         if (typeof window !== 'undefined' && (window as any).PaychanguCheckout) {
-                          (window as any).PaychanguCheckout({
-                            public_key: publicKey,
-                            tx_ref: tx_ref.toString(),
-                            amount: amount,
-                            currency: 'MWK',
-                            callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
-                            return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
-                            customer: {
-                              email: 'user@example.com',
-                              first_name: 'User',
-                              last_name: 'Account',
-                            },
-                            customization: {
-                              title: 'SME Studio AI',
-                              description: 'Monthly Subscription - MK 25,000',
-                            },
-                            meta: {
-                              plan: 'monthly',
+                          try {
+                            (window as any).PaychanguCheckout({
+                              public_key: publicKey,
+                              tx_ref: tx_ref,
                               amount: amount,
-                            },
-                          })
+                              currency: 'MWK',
+                              callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
+                              return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
+                              customer: {
+                                email: user?.email || 'user@example.com',
+                                first_name: firstName || 'User',
+                                last_name: lastName || 'Account',
+                              },
+                              customization: {
+                                title: 'SME Studio AI',
+                                description: 'Monthly Subscription - MK 25,000',
+                              },
+                              meta: {
+                                plan: 'monthly',
+                                amount: amount,
+                              },
+                            })
+                          } catch (error) {
+                            console.error('PayChangu error:', error)
+                            toast.error('Payment system error. Please try again.')
+                          }
                         } else {
-                          toast.error('Payment system not loaded. Please refresh the page.')
+                          toast.error('Payment system not ready. Please try again.')
                         }
                       }}
                       className="w-full bg-emerald text-white py-3 rounded-lg hover:bg-emerald/90 transition font-semibold"
@@ -579,34 +618,41 @@ export default function ClientDashboardPage() {
                     </ul>
                     <button
                       onClick={() => {
-                        const tx_ref = Math.floor(Math.random() * 1000000000) + 1
+                        const tx_ref = '' + Math.floor((Math.random() * 1000000000) + 1)
                         const amount = 10000
                         const publicKey = process.env.NEXT_PUBLIC_PAYCHANGU_PUBLIC_KEY
+                        const [firstName, lastName] = user?.fullName?.split(' ') || ['User', 'Account']
                         
+                        // Call PayChangu checkout
                         if (typeof window !== 'undefined' && (window as any).PaychanguCheckout) {
-                          (window as any).PaychanguCheckout({
-                            public_key: publicKey,
-                            tx_ref: tx_ref.toString(),
-                            amount: amount,
-                            currency: 'MWK',
-                            callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
-                            return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
-                            customer: {
-                              email: 'user@example.com',
-                              first_name: 'User',
-                              last_name: 'Account',
-                            },
-                            customization: {
-                              title: 'SME Studio AI',
-                              description: 'Weekly Subscription - MK 10,000',
-                            },
-                            meta: {
-                              plan: 'weekly',
+                          try {
+                            (window as any).PaychanguCheckout({
+                              public_key: publicKey,
+                              tx_ref: tx_ref,
                               amount: amount,
-                            },
-                          })
+                              currency: 'MWK',
+                              callback_url: process.env.NEXT_PUBLIC_PAYCHANGU_CALLBACK_URL,
+                              return_url: process.env.NEXT_PUBLIC_PAYCHANGU_RETURN_URL,
+                              customer: {
+                                email: user?.email || 'user@example.com',
+                                first_name: firstName || 'User',
+                                last_name: lastName || 'Account',
+                              },
+                              customization: {
+                                title: 'SME Studio AI',
+                                description: 'Weekly Subscription - MK 10,000',
+                              },
+                              meta: {
+                                plan: 'weekly',
+                                amount: amount,
+                              },
+                            })
+                          } catch (error) {
+                            console.error('PayChangu error:', error)
+                            toast.error('Payment system error. Please try again.')
+                          }
                         } else {
-                          toast.error('Payment system not loaded. Please refresh the page.')
+                          toast.error('Payment system not ready. Please try again.')
                         }
                       }}
                       className="w-full bg-gold text-white py-3 rounded-lg hover:bg-gold/90 transition font-semibold"
