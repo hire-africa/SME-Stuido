@@ -96,7 +96,7 @@ model Payment {
   status        PaymentStatus @default(PENDING)
   
   transactionId String?    @unique
-  reference     String?
+  reference     String?    @unique
   
   description   String?
   

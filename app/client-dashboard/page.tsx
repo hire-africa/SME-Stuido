@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
-  BarChart3, Users, DollarSign, FileText, LogOut, Menu, X, Settings, 
-  TrendingUp, AlertCircle, CheckCircle, Clock, Eye, Download, Trash2,
-  Home, MoreVertical, ChevronDown, Zap, ArrowRight, Lock, 
+  BarChart3, DollarSign, FileText, LogOut, Menu, X, Settings, 
+  TrendingUp, Clock, Eye, Download, Trash2,
+  Zap, ArrowRight, 
   BookOpen, Presentation, Building2, Calculator, Palette, Briefcase, Check
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/authStore'
@@ -27,7 +27,6 @@ export default function ClientDashboardPage() {
     // Check for payment status in URL
     const searchParams = new URLSearchParams(window.location.search)
     const paymentStatus = searchParams.get('payment')
-    const txRef = searchParams.get('tx_ref')
 
     if (paymentStatus === 'success') {
       toast.success('Payment successful! Your subscription is now active.')

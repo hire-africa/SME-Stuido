@@ -116,7 +116,7 @@ export default function CompanyProfileGeneratorPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${formData.businessName.replace(/\s+/g, '_')}_company_profile.pptx`
+      a.download = `${formData.businessName.replace(/\s+/g, '_')}_company_profile.docx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -345,7 +345,7 @@ export default function CompanyProfileGeneratorPage() {
                   className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                 >
                   <Download size={20} />
-                  Download as Professional Slides (.pptx)
+                  Download as Professional Slides (.docx)
                 </button>
               </div>
             </div>

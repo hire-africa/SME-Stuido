@@ -26,7 +26,6 @@
     "openai": "^4.52.0",
     "pdfkit": "^0.13.0",
     "pg": "^8.11.3",
-    "pptxgenjs": "^3.12.0",
     "prisma": "^5.7.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -36,6 +35,8 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",

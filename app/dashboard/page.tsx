@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { FileText, Plus, LogOut, Menu, X, TrendingUp, Users, Sparkles, Settings, Download, Trash2 } from 'lucide-react'
+import { FileText, Menu, X, TrendingUp, Users, Settings, LogOut, Download, Sparkles, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [projects, setProjects] = useState([
+  const [projects] = useState([
     {
       id: 1,
       title: 'My First Business Proposal',

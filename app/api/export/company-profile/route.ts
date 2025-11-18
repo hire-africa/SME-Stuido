@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exportToPowerPoint } from '@/lib/pptxExport'
+import { exportDocument } from '@/lib/documentExport'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,14 +13,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { buffer, filename, mimeType } = await exportToPowerPoint({
-      title: 'Company Profile',
-      businessName,
-      type: 'company-profile',
+    const { buffer, filename, mimeType } = await exportDocument(
       content,
-    })
+      'Company Profile',
+      businessName,
+      'Company Profile',
+      'docx', // Use Word format with professional slide layout
+      true // Use slide format for company profiles
+    )
 
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(buffer as any, {
       headers: {
         'Content-Type': mimeType,
         'Content-Disposition': `attachment; filename="${filename}"`,
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to export presentation',
+        error: error instanceof Error ? error.message : 'Failed to export document',
       },
       { status: 500 }
     )
