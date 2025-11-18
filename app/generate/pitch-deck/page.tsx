@@ -103,7 +103,7 @@ export default function PitchDeckGeneratorPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${formData.businessName.replace(/\s+/g, '_')}_pitch_deck.docx`
+      a.download = `${formData.businessName.replace(/\s+/g, '_')}_pitch_deck.pptx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -320,7 +320,7 @@ export default function PitchDeckGeneratorPage() {
                   className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                 >
                   <Download size={20} />
-                  Download as Professional Slides (.docx)
+                  Download as Professional Slides (.pptx)
                 </button>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { 
   BarChart3, Users, DollarSign, FileText, LogOut, Menu, X, Settings, 
-  TrendingUp, AlertCircle, CheckCircle, Clock, Trash2, Edit, Eye
+  TrendingUp, CheckCircle, Clock, Trash2, Edit, Eye
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
